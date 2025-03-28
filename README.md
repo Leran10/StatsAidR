@@ -18,7 +18,7 @@ StatsAid helps researchers analyze their data with advanced statistical methods 
 ```r
 # Install from GitHub
 # install.packages("devtools")
-devtools::install_github("username/StatsAid-R")
+devtools::install_github("Leran10/StatsAidR")
 ```
 
 ## Quick Start
