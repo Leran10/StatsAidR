@@ -1,0 +1,53 @@
+Package: StatsAid
+Title: Comprehensive Toolkit for Data Exploration, Cleaning, and Analysis in Research
+Version: 0.1.0
+Authors@R: 
+    person("Leran", "Wang", , "leran@example.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0000-0000-0000"))
+Description: StatsAid helps researchers analyze their data with advanced 
+    statistical methods and intuitive visualizations. It provides tools for
+    data exploration, missing value analysis, distribution analysis, statistical
+    test selection, effect size analysis, power analysis, and automated reporting.
+    The package aims to streamline the data analysis workflow for researchers across fields.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    dplyr,
+    ggplot2,
+    tidyr,
+    stats,
+    purrr,
+    forcats,
+    tibble,
+    gridExtra,
+    caret,
+    visdat,
+    naniar,
+    mice,
+    VIM,
+    corrplot,
+    RColorBrewer,
+    GGally,
+    knitr,
+    rmarkdown,
+    car,
+    moments,
+    reshape2,
+    rlang
+Suggests: 
+    testthat (>= 3.0.0),
+    vdiffr,
+    rpart,
+    rpart.plot,
+    randomForest,
+    e1071,
+    glmnet,
+    lme4,
+    survival,
+    MASS,
+    pwr,
+    effsize
+Config/testthat/edition: 3
+VignetteBuilder: knitr

@@ -1,0 +1,147 @@
+---
+title: "Introduction to StatsAid"
+author: "Leran Wang"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to StatsAid}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# StatsAid: A Comprehensive Data Analysis Toolkit
+
+StatsAid is designed to streamline and enhance the data analysis workflow for researchers. This vignette introduces you to the main features and functions of the package.
+
+## Installation
+
+```{r, eval=FALSE}
+# Install from GitHub
+# install.packages("devtools")
+devtools::install_github("username/StatsAid-R")
+```
+
+## Basic Usage
+
+Let's start by loading the package and creating some sample data to demonstrate StatsAid's capabilities:
+
+```{r}
+library(StatsAid)
+
+# Create sample data with various data types and some missing values
+set.seed(123)
+sample_data <- data.frame(
+  age = c(25, 30, 35, 40, NA, 45, 50, 55, 60, 65),
+  weight = c(70, 75, NA, 85, 90, 65, 80, 75, 70, 85),
+  height = c(170, 175, 180, 185, 175, 165, NA, 175, 180, 170),
+  gender = factor(c("M", "F", "M", "F", "M", "F", "M", "F", "M", "F")),
+  smoker = c(TRUE, FALSE, TRUE, FALSE, NA, FALSE, TRUE, FALSE, TRUE, FALSE),
+  income = c(50000, 60000, 55000, 70000, 65000, 75000, 60000, 80000, 90000, 150000)
+)
+```
+
+## Data Exploration
+
+The `explore()` function provides a comprehensive overview of your dataset:
+
+```{r}
+# Get data overview
+overview <- explore(sample_data)
+print(overview)
+```
+
+## Missing Data Analysis
+
+StatsAid offers sophisticated tools for analyzing missing data patterns:
+
+```{r}
+# Analyze missing data patterns
+missing_analysis <- analyze_missing_patterns(sample_data, plot = FALSE)
+print(missing_analysis)
+```
+
+## Visualizing Data
+
+StatsAid provides several visualization functions to help you understand your data:
+
+```{r, fig.width=7, fig.height=5}
+# Plot missing data
+plot_missing_bar(sample_data)
+```
+
+Let's visualize the distributions of our variables:
+
+```{r, fig.width=7, fig.height=5}
+# Get distribution plots for numeric variables
+distribution_plots <- plot_distributions(sample_data, max_cols = 3)
+# Display the first numeric plot
+distribution_plots$numeric$age
+```
+
+And let's look at correlations between numeric variables:
+
+```{r, fig.width=7, fig.height=6}
+# Create correlation matrix
+plot_correlation_matrix(sample_data)
+```
+
+Detecting outliers is also straightforward:
+
+```{r, fig.width=7, fig.height=5}
+# Create boxplots for outlier detection
+plot_outliers(sample_data)
+```
+
+## Testing for Normality
+
+StatsAid provides tools for testing the normality of your variables:
+
+```{r}
+# Test normality of numeric variables
+normality_results <- test_normality(sample_data)
+print(normality_results)
+```
+
+## Getting Preprocessing Suggestions
+
+Based on its analysis, StatsAid can suggest appropriate preprocessing steps:
+
+```{r}
+# Get preprocessing suggestions
+preprocessing_suggestions <- suggest_preprocessing(sample_data)
+print(preprocessing_suggestions)
+```
+
+## Statistical Model Suggestions
+
+StatsAid can also suggest appropriate statistical models based on your study design:
+
+```{r}
+# Get model suggestions based on a specific study design
+model_suggestions <- suggest_models(sample_data, study_design = "cross_sectional")
+print(model_suggestions)
+```
+
+## Automated Reporting
+
+Finally, StatsAid can generate comprehensive reports with a single function call:
+
+```{r, eval=FALSE}
+# Generate a complete report
+create_report(sample_data, 
+              title = "Sample Data Analysis", 
+              file = "sample_report.html")
+```
+
+## Conclusion
+
+StatsAid provides a complete toolkit for data exploration, visualization, preprocessing, and analysis. By automating many routine tasks and providing intelligent suggestions, it helps researchers spend less time on data wrangling and more time on interpretation and discovery.
+
+For more details on each function, refer to the function documentation.
