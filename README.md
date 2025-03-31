@@ -66,18 +66,19 @@ corr_plot <- plot_correlation_matrix(data)
 create_report(data, title = "My Dataset Analysis", file = "report.html")
 ```
 
-### Troubleshooting
+## About RStudio Compatibility
 
-### Missing Data Analysis Issues
+StatsAidR v0.1.0 and later includes robust handling for RStudio-related issues that some users might encounter. Previous versions occasionally produced errors like `Error in rstudio$.rs.isDesktop() : attempt to apply non-function` when trying to create or display visualizations.
 
-If you encounter errors with `analyze_missing_patterns()` related to RStudio functions:
+### What's Been Fixed?
 
-1. Try using `analyze_missing_patterns(data, plot = FALSE)` to skip visualizations
-2. Update to the latest version which includes robust RStudio error handling
+1. **Safe RStudio Detection**: The package now uses robust methods to detect whether it's running in RStudio without causing errors.
+2. **Error-Tolerant Visualizations**: All visualization functions now have improved error handling.
+3. **Alternative Display Options**: New utility functions that work across all environments.
 
-### Visualization Issues
+### Troubleshooting Visualization Issues
 
-If you encounter errors like `Error in rstudio$.rs.isDesktop()` when trying to view plots:
+If you still encounter errors like `Error in rstudio$.rs.isDesktop()` when trying to view plots:
 
 1. Use the `safe_plot()` function to display plots safely:
    ```r
@@ -92,6 +93,13 @@ If you encounter errors like `Error in rstudio$.rs.isDesktop()` when trying to v
    view_all_plots(plots, type = "numeric")  # View only numeric plots
    view_all_plots(plots, pause = FALSE)  # View without pauses
    ```
+
+### Troubleshooting Missing Data Analysis
+
+If you encounter errors with `analyze_missing_patterns()`:
+
+1. Try using `analyze_missing_patterns(data, plot = FALSE)` to skip visualizations
+2. Make sure you have the latest version of the package which includes robust RStudio error handling
 
 ## Key Features
 
@@ -163,20 +171,31 @@ The enhanced model suggestions will:
 
 ## Function Reference
 
-Key functions include:
+### Core Analysis Functions
 
 - `explore()`: Generate a comprehensive overview of a dataset
 - `suggest_preprocessing()`: Receive preprocessing suggestions based on data
 - `analyze_missing_patterns()`: Analyze missing data patterns and mechanisms
 - `test_normality()`: Test variables for normality with multiple methods
+- `suggest_models()`: Get model recommendations for your study design
+- `create_report()`: Generate a comprehensive HTML report
+
+### Visualization Functions
+
 - `plot_missing_values()`: Create visualizations of missing values
 - `plot_distributions()`: Create distribution plots for variables
 - `plot_correlation_matrix()`: Create correlation matrix heatmaps
 - `plot_outliers()`: Create boxplots to detect outliers
-- `suggest_models()`: Get model recommendations for your study design
-- `create_report()`: Generate a comprehensive HTML report
+- `plot_pairplot()`: Create matrix of pairwise scatter plots
 
-Advanced model suggestion functions:
+### RStudio-Compatible Utilities
+
+These functions provide robust alternatives that work even in environments where RStudio detection might fail:
+
+- `safe_plot()`: Safely display a plot object, handling potential RStudio errors
+- `view_all_plots()`: Browse through all plots from a `plot_distributions()` result safely
+
+### Advanced Model Suggestion Functions
 
 - `analyze_data_structure()`: Comprehensive data structure analysis
 - `analyze_distributions()`: Detailed distribution analysis
@@ -185,6 +204,27 @@ Advanced model suggestion functions:
 - `analyze_outcome()`: Analyze outcome variable characteristics
 - `study_design_spec()`: Create detailed study design specifications
 - `guide_model_selection()`: Interactive model selection guide
+
+## Working with Plots
+
+The `plot_distributions()` function creates a list of plots that you can explore in several ways:
+
+```r
+# Create plots
+plots <- plot_distributions(data)
+
+# Option 1: Use standard plotting (may have issues in some environments)
+plot(plots$numeric[[1]])  # View first numeric variable
+
+# Option 2: Use the safe_plot function (robust across all environments)
+safe_plot(plots$numeric[[1]])  # View first numeric variable
+safe_plot(plots$categorical[[2]])  # View second categorical variable
+
+# Option 3: Automatically view all plots with the helper function
+view_all_plots(plots)  # View all plots (with prompt between each)
+view_all_plots(plots, type = "numeric")  # View only numeric plots
+view_all_plots(plots, pause = FALSE)  # View all plots without pausing
+```
 
 ## Dependencies
 
