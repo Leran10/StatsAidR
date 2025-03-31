@@ -68,13 +68,29 @@ create_report(data, title = "My Dataset Analysis", file = "report.html")
 
 ### Troubleshooting
 
+### Missing Data Analysis Issues
+
 If you encounter errors with `analyze_missing_patterns()` related to RStudio functions:
 
 1. Try using `analyze_missing_patterns(data, plot = FALSE)` to skip visualizations
-2. Use the standalone function available in the repo:
+2. Update to the latest version which includes robust RStudio error handling
+
+### Visualization Issues
+
+If you encounter errors like `Error in rstudio$.rs.isDesktop()` when trying to view plots:
+
+1. Use the `safe_plot()` function to display plots safely:
    ```r
-   source("https://raw.githubusercontent.com/Leran10/StatsAidR/main/R/missing_data_standalone.R")
-   missing_analysis <- missing_data_analysis(data)
+   plots <- plot_distributions(data)
+   safe_plot(plots$numeric[[1]])  # View the first numeric plot safely
+   ```
+
+2. Use the `view_all_plots()` function to browse through all plots:
+   ```r
+   plots <- plot_distributions(data)
+   view_all_plots(plots)  # View all plots with pauses between them
+   view_all_plots(plots, type = "numeric")  # View only numeric plots
+   view_all_plots(plots, pause = FALSE)  # View without pauses
    ```
 
 ## Key Features

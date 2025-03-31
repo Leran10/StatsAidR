@@ -290,7 +290,7 @@ print.statsaid_plots <- function(x, ...) {
   }
   
   # Print message about plotting
-  cat("StatsAid Distribution Plots:\n")
+  cat("StatsAidR Distribution Plots:\n")
   
   # Count numeric plots
   if (!is.null(x$numeric)) {
@@ -304,6 +304,8 @@ print.statsaid_plots <- function(x, ...) {
   
   cat("\nUse plot() on individual elements to display them.\n")
   cat("For example: plot(x$numeric[[1]]) or plot(x$categorical[[1]])\n")
+  cat("\nIf you encounter RStudio-related errors, use safe_plot():\n")
+  cat("safe_plot(x$numeric[[1]]) or safe_plot(x$categorical[[1]])\n")
   
   # Return invisibly
   invisible(x)

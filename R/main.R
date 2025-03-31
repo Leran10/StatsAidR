@@ -104,9 +104,45 @@ analyze_missing_patterns <- function(data, plot = TRUE) {
     # Missing values bar chart
     results$plots$bar <- plot_missing_bar(data)
     
-    # Use our safe wrapper functions for the problematic visualizations
-    results$plots$patterns <- safe_vis_miss(data)
-    results$plots$combinations <- safe_gg_miss_upset(data)
+    # Safely generate visdat plot
+    results$plots$patterns <- tryCatch({
+      visdat::vis_miss(data)
+    }, error = function(e) {
+      if (grepl("rstudio", e$message)) {
+        warning("RStudio detection issue with visdat::vis_miss, using simplified plot")
+        # Simple fallback visualization
+        missing_data <- reshape2::melt(
+          is.na(data), 
+          varnames = c("row", "variable"), 
+          value.name = "missing"
+        )
+        
+        ggplot2::ggplot(missing_data, ggplot2::aes(x = variable, y = row, fill = missing)) +
+          ggplot2::geom_tile() +
+          ggplot2::scale_fill_manual(values = c("FALSE" = "grey80", "TRUE" = "#0172B1")) +
+          ggplot2::theme_minimal() +
+          ggplot2::labs(title = "Missing values", 
+                       x = "Variables", 
+                       y = "Observations", 
+                       fill = "Missing") +
+          ggplot2::theme(axis.text.y = ggplot2::element_blank())
+      } else {
+        warning("Error generating missing patterns plot: ", e$message)
+        NULL
+      }
+    })
+    
+    # Safely generate naniar plot
+    results$plots$combinations <- tryCatch({
+      naniar::gg_miss_upset(data)
+    }, error = function(e) {
+      if (grepl("rstudio", e$message)) {
+        warning("RStudio detection issue with naniar::gg_miss_upset")
+      } else {
+        warning("Error generating missing combinations plot: ", e$message)
+      }
+      NULL
+    })
   }
   
   # Detect potential MCAR/MAR patterns
