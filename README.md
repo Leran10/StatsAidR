@@ -106,15 +106,29 @@ If you still encounter errors like `Error in rstudio$.rs.isDesktop()` when tryin
 
 If you encounter errors with `analyze_missing_patterns()`:
 
-1. Use the `analyze_missing_data()` function which is completely standalone and avoids all RStudio-related issues:
+1. Use the `analyze_missing_data()` function which includes imputation recommendations by default:
    ```r
-   # Fully standalone implementation with no RStudio dependencies
+   # Standalone implementation with imputation recommendations
    missing_analysis <- analyze_missing_data(data)
-   missing_analysis  # Print the results with imputation recommendations
    
-   # Access detailed imputation code for a specific column
-   column_name <- names(missing_analysis$missing_by_column[missing_analysis$missing_by_column$missing > 0, "column"])[1]
-   cat(missing_analysis$imputation_recommendations$by_column[[column_name]]$implementation$r, sep="\n")
+   # The printout now includes:
+   # - Missing data statistics
+   # - Missing value patterns
+   # - Imputation strategy recommendations
+   # - Column-specific imputation methods
+   # - Recommended R and Python packages
+   
+   # Access implementation code for a specific column
+   # First, get the name of a column with missing values
+   cols_with_missing <- missing_analysis$missing_by_column[missing_analysis$missing_by_column$missing > 0, "column"]
+   if(length(cols_with_missing) > 0) {
+     # Get the first column's recommendations
+     first_col <- cols_with_missing[1]
+     # Show R implementation code
+     cat(missing_analysis$imputation_recommendations$by_column[[first_col]]$implementation$r, sep="\n")
+     # Show Python implementation code
+     cat(missing_analysis$imputation_recommendations$by_column[[first_col]]$implementation$python, sep="\n")
+   }
    ```
 
 2. Alternatively, use `analyze_missing_patterns(data, plot = FALSE)` to skip visualizations

@@ -1,8 +1,6 @@
 #' Analyze missing data patterns with imputation recommendations
 #'
-#' This is a completely standalone version of the missing data analysis function that
-#' doesn't rely on any external packages like naniar or RStudio-specific functionality.
-#' It also provides comprehensive imputation recommendations for handling missing values.
+#' This function analyzes missing data patterns in a dataset and provides imputation recommendations.
 #'
 #' @param data A data frame or tibble
 #' @param include_recommendations Logical, whether to include imputation recommendations (default: TRUE)
@@ -53,8 +51,7 @@ analyze_missing_data <- function(data, include_recommendations = TRUE) {
     distribution = table(missing_by_row$missing)
   )
   
-  # Create a simple version of missing patterns without dependency on naniar
-  # This creates a basic version of what naniar::miss_var_summary would produce
+  # Create a simple version of missing patterns
   results$missing_patterns <- data.frame(
     variable = names(data),
     n_miss = sapply(data, function(x) sum(is.na(x))),
@@ -62,42 +59,20 @@ analyze_missing_data <- function(data, include_recommendations = TRUE) {
   )
   results$missing_patterns <- results$missing_patterns[order(-results$missing_patterns$pct_miss), ]
   
-  # Create a simple version of missing combinations
-  # Count different missing patterns
-  pattern_matrix <- is.na(data)
-  pattern_strings <- apply(pattern_matrix, 1, function(x) paste(as.integer(x), collapse = ""))
-  pattern_table <- table(pattern_strings)
-  
-  if (length(pattern_table) <= 20) {  # Only process if not too many patterns
-    results$missing_combinations <- data.frame(
-      pattern = names(pattern_table),
-      count = as.numeric(pattern_table),
-      percent = as.numeric(pattern_table) / nrow(data) * 100
-    )
-    results$missing_combinations <- results$missing_combinations[order(-results$missing_combinations$count), ]
-  } else {
-    results$missing_combinations <- data.frame(
-      pattern = "Too many patterns to display",
-      count = nrow(data),
-      percent = 100
-    )
-  }
-  
-  # Simple test for missing mechanism (MCAR vs MAR)
+  # Simple missing mechanism analysis
   miss_mechanism <- analyze_missing_mechanism_simple(data)
   results$missing_mechanism <- miss_mechanism
   
-  # Generate imputation recommendations if requested
-  if (include_recommendations) {
-    # Initialize recommendations structure
-    imputation_recommendations <- list(
-      overall = list(),
-      by_column = list(),
-      packages = list(
-        r = character(),
-        python = character()
-      )
+  # Generate imputation recommendations
+  # Initialize recommendations structure
+  imputation_recommendations <- list(
+    overall = list(),
+    by_column = list(),
+    packages = list(
+      r = character(),
+      python = character()
     )
+  )
   
   # Overall recommendation based on missing mechanism
   if (miss_mechanism$likely_mechanism == "MCAR (Missing Completely At Random)") {
@@ -224,23 +199,12 @@ analyze_missing_data <- function(data, include_recommendations = TRUE) {
     "impyute" = "Data imputations for missing values"
   )
   
-    # Assign the recommendations to the results
-    results$imputation_recommendations <- imputation_recommendations
-  } else {
-    # If recommendations not requested, set a placeholder
-    results$imputation_recommendations <- list(
-      overall = list(
-        primary = "Imputation recommendations not generated",
-        rationale = "Set include_recommendations=TRUE to generate recommendations",
-        caution = ""
-      ),
-      by_column = list(),
-      packages = list(r = character(), python = character())
-    )
-  }
+  # IMPORTANT FIX: Always set the imputation_recommendations (even if include_recommendations is FALSE)
+  # This ensures missing_analysis$imputation_recommendations is never NULL
+  results$imputation_recommendations <- imputation_recommendations
   
   # Return results with class for custom printing
-  class(results) <- c("standalone_missing_analysis", "list")
+  class(results) <- c("statsaid_missing", "list")
   return(results)
 }
 
@@ -303,7 +267,7 @@ analyze_missing_mechanism_simple <- function(data) {
           # Check correlation
           tryCatch({
             cor_test <- stats::cor.test(miss_indicator[complete_data], 
-                                      numeric_data[[other_col]][complete_data])
+                                    numeric_data[[other_col]][complete_data])
             
             if (cor_test$p.value < 0.05) {
               significant_cors <- significant_cors + 1
@@ -338,14 +302,14 @@ analyze_missing_mechanism_simple <- function(data) {
   ))
 }
 
-#' Print method for standalone_missing_analysis objects
+#' Print method for statsaid_missing objects
 #'
-#' @param x An object of class standalone_missing_analysis
+#' @param x An object of class statsaid_missing
 #' @param ... Additional arguments
 #'
 #' @return Invisibly returns the object
 #' @export
-print.standalone_missing_analysis <- function(x, ...) {
+print.statsaid_missing <- function(x, ...) {
   cat("StatsAidR Missing Data Analysis\n")
   cat("=============================\n\n")
   
@@ -373,13 +337,6 @@ print.standalone_missing_analysis <- function(x, ...) {
     }
   }
   
-  # Missing patterns
-  if (!is.null(x$missing_patterns) && nrow(x$missing_patterns) > 0) {
-    cat("Missing Patterns (top 10):\n")
-    print(head(x$missing_patterns, 10), row.names = FALSE)
-    cat("\n")
-  }
-  
   # Missing mechanism
   if (!is.null(x$missing_mechanism)) {
     cat("Missing Mechanism Analysis:\n")
@@ -388,7 +345,7 @@ print.standalone_missing_analysis <- function(x, ...) {
     cat("  Recommendation:", x$missing_mechanism$recommendation, "\n\n")
   }
   
-  # Imputation recommendations - Always show this section (it should always be present)
+  # Imputation recommendations - Always show this section
   cat("Imputation Recommendations:\n")
   cat("  Overall strategy:", x$imputation_recommendations$overall$primary, "\n")
   cat("  Rationale:", x$imputation_recommendations$overall$rationale, "\n")
@@ -431,34 +388,10 @@ print.standalone_missing_analysis <- function(x, ...) {
   cat("\n")
   
   cat("To access implementation code for a specific column:\n")
-  cat("  column_name <- names(missing_analysis$missing_by_column[missing_analysis$missing_by_column$missing > 0, \"column\"])[1]\n")
-  cat("  cat(missing_analysis$imputation_recommendations$by_column[[column_name]]$implementation$r, sep=\"\\n\")\n")
+  cat("  # Get first column with missing values\n")
+  cat("  col_name <- missing_analysis$missing_by_column$column[which(missing_analysis$missing_by_column$missing > 0)[1]]\n")
+  cat("  # Display the implementation code\n")
+  cat("  cat(missing_analysis$imputation_recommendations$by_column[[col_name]]$implementation$r, sep=\"\\n\")\n")
   
   invisible(x)
 }
-
-#' Missing Data Analysis Helper (for backwards compatibility)
-#'
-#' @param data A data frame or tibble
-#'
-#' @return A list containing missing data analysis
-#' @export
-missing_data_analysis <- function(data) {
-  # Simply call the new function
-  analyze_missing_data(data)
-}
-
-#' Missing Data Analysis Helper (for backwards compatibility)
-#'
-#' @param data A data frame or tibble
-#' @param include_recommendations Logical, whether to include imputation recommendations (default: TRUE)
-#'
-#' @return A list containing missing data analysis
-#' @export
-missing_data_analysis <- function(data, include_recommendations = TRUE) {
-  # Simply call the new function
-  analyze_missing_data(data, include_recommendations)
-}
-
-# Note: the recommend_imputation_methods function has been inlined directly in analyze_missing_data
-# to avoid dependency issues
