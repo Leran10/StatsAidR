@@ -771,8 +771,9 @@ create_report <- function(data, title = "Data Analysis Report",
 #' study design, and data characteristics.
 #'
 #' @param data A data frame or tibble
-#' @param study_design Character string specifying the study design. Options include
+#' @param design Character string specifying the study design. Options include
 #'   'case_control', 'cohort', 'cross_sectional', 'longitudinal', 'rct', or NULL.
+#'   Can also be a design specification object created with study_design_spec().
 #' @param outcome_var Optional character string specifying the outcome variable name
 #' @param detailed Logical, if TRUE, provides more detailed recommendations
 #'
@@ -785,22 +786,33 @@ create_report <- function(data, title = "Data Analysis Report",
 #'   a = c(1, 2, 3, 4),
 #'   b = c("x", "y", "z", "x")
 #' )
-#' suggest_models(data, study_design = "cross_sectional")
+#' suggest_models(data, design = "cross_sectional")
 #' }
-suggest_models <- function(data, study_design = NULL, outcome_var = NULL, detailed = FALSE) {
-  # Check if we can call the enhanced version from model_suggestion.R
-  if (exists("suggest_models", where = asNamespace("StatsAid"), mode = "function") &&
-      !identical(suggest_models, get("suggest_models", envir = parent.frame()))) {
-    # Call the enhanced version
-    return(get("suggest_models", envir = asNamespace("StatsAid"))(
-      data = data, 
-      design = study_design,
-      outcome_var = outcome_var,
-      detailed = detailed
-    ))
-  }
+suggest_models <- function(data, design = NULL, outcome_var = NULL, detailed = FALSE) {
+  # Try to call the enhanced version from model_suggestion.R
+  enhanced_available <- FALSE
   
-  # Fallback to basic implementation if enhanced version is not available
+  tryCatch({
+    # Check if the enhanced version is available
+    if (requireNamespace("StatsAidR", quietly = TRUE) &&
+        exists("suggest_models", where = asNamespace("StatsAidR"), mode = "function") &&
+        !identical(suggest_models, get("suggest_models", envir = parent.frame()))) {
+      
+      # Call the enhanced version
+      return(get("suggest_models", envir = asNamespace("StatsAidR"))(
+        data = data, 
+        design = design,
+        outcome_var = outcome_var,
+        detailed = detailed
+      ))
+      enhanced_available <- TRUE
+    }
+  }, error = function(e) {
+    # If there's an error accessing the namespace, continue with the fallback implementation
+    message("Using basic model suggestions implementation")
+  })
+  
+  # If we get here, use the fallback implementation
   
   # Check input
   if (!is.data.frame(data)) {
@@ -829,7 +841,17 @@ suggest_models <- function(data, study_design = NULL, outcome_var = NULL, detail
   suggestions$packages$python <- c("scikit-learn", "statsmodels", "scipy")
   
   # Study design specific suggestions
-  if (is.null(study_design)) {
+  # If design is a character string, use it directly
+  # If it's a design specification object, extract the design_type
+  design_type <- if (is.character(design)) {
+    design
+  } else if (is.list(design) && !is.null(design$design_type)) {
+    design$design_type
+  } else {
+    NULL
+  }
+  
+  if (is.null(design_type)) {
     # General suggestions based on data characteristics
     if (num_samples < 30) {
       suggestions$models <- c(suggestions$models, "Non-parametric tests (small sample size)")
@@ -845,7 +867,7 @@ suggest_models <- function(data, study_design = NULL, outcome_var = NULL, detail
       suggestions$packages$python <- c(suggestions$packages$python, "xgboost", "lightgbm")
     }
     
-  } else if (study_design == "case_control") {
+  } else if (design_type == "case_control") {
     suggestions$models <- c(suggestions$models,
                             "Logistic regression",
                             "Conditional logistic regression",
@@ -853,7 +875,7 @@ suggest_models <- function(data, study_design = NULL, outcome_var = NULL, detail
     suggestions$packages$r <- c(suggestions$packages$r, "survival", "epitools", "epiR")
     suggestions$packages$python <- c(suggestions$packages$python, "lifelines")
     
-  } else if (study_design == "cohort") {
+  } else if (design_type == "cohort") {
     suggestions$models <- c(suggestions$models,
                             "Cox proportional hazards",
                             "Kaplan-Meier survival analysis",
@@ -862,7 +884,7 @@ suggest_models <- function(data, study_design = NULL, outcome_var = NULL, detail
     suggestions$packages$r <- c(suggestions$packages$r, "survival", "survminer", "MASS")
     suggestions$packages$python <- c(suggestions$packages$python, "lifelines", "statsmodels.discrete_models")
     
-  } else if (study_design == "cross_sectional") {
+  } else if (design_type == "cross_sectional") {
     suggestions$models <- c(suggestions$models,
                             "Chi-square test of independence",
                             "Fisher's exact test",
@@ -870,7 +892,7 @@ suggest_models <- function(data, study_design = NULL, outcome_var = NULL, detail
                             "Multinomial logistic regression")
     suggestions$packages$r <- c(suggestions$packages$r, "vcd", "nnet", "MASS")
     
-  } else if (study_design == "longitudinal") {
+  } else if (design_type == "longitudinal") {
     suggestions$models <- c(suggestions$models,
                             "Mixed effects models",
                             "Generalized estimating equations (GEE)",
@@ -878,7 +900,7 @@ suggest_models <- function(data, study_design = NULL, outcome_var = NULL, detail
     suggestions$packages$r <- c(suggestions$packages$r, "lme4", "nlme", "geepack")
     suggestions$packages$python <- c(suggestions$packages$python, "statsmodels.genmod.gee")
     
-  } else if (study_design == "rct") {
+  } else if (design_type == "rct") {
     suggestions$models <- c(suggestions$models,
                             "Independent t-test",
                             "Paired t-test",
@@ -913,7 +935,7 @@ suggest_models <- function(data, study_design = NULL, outcome_var = NULL, detail
   
   # Handle imbalanced data (assuming classification)
   # This is a simplified check - you'd want to actually check the target variable
-  if (!is.null(study_design) && study_design == "case_control") {
+  if (!is.null(design_type) && design_type == "case_control") {
     suggestions$models <- c(suggestions$models,
                             "SMOTE for class imbalance",
                             "Weighted models",

@@ -24,7 +24,7 @@ devtools::install_github("Leran10/StatsAidR")
 ## Quick Start
 
 ```r
-library(StatsAid)
+library(StatsAidR)
 
 # Load your data
 data <- read.csv("your_data.csv")
@@ -33,13 +33,30 @@ data <- read.csv("your_data.csv")
 overview <- explore(data)
 
 # Analyze missing values and patterns
+# Option 1 - Full analysis with plots (may have issues in some environments)
 missing_analysis <- analyze_missing_patterns(data)
+
+# Option 2 - Analysis without plots (more reliable across all environments)
+missing_analysis <- analyze_missing_patterns(data, plot = FALSE)
+
+# Option 3 - If you encounter RStudio errors with the above methods
+# Source the standalone helper function
+source("https://raw.githubusercontent.com/Leran10/StatsAidR/main/R/missing_data_standalone.R")
+missing_analysis <- missing_data_analysis(data)
 
 # Test distributions and find transformations
 normality_results <- test_normality(data)
 
 # Get model recommendations
-models <- suggest_models(data, study_design = "case_control")
+# Option 1 - Basic model suggestions with a simple design type
+models <- suggest_models(data, design = "case_control")
+
+# Option 2 - More detailed model suggestions with a design specification object
+design_spec <- study_design_spec(
+  design_type = "case_control", 
+  response_type = "binary"
+)
+models <- suggest_models(data, design = design_spec, outcome_var = "outcome_column")
 
 # Create visualizations
 plots <- plot_distributions(data)
@@ -48,6 +65,17 @@ corr_plot <- plot_correlation_matrix(data)
 # Generate a complete report
 create_report(data, title = "My Dataset Analysis", file = "report.html")
 ```
+
+### Troubleshooting
+
+If you encounter errors with `analyze_missing_patterns()` related to RStudio functions:
+
+1. Try using `analyze_missing_patterns(data, plot = FALSE)` to skip visualizations
+2. Use the standalone function available in the repo:
+   ```r
+   source("https://raw.githubusercontent.com/Leran10/StatsAidR/main/R/missing_data_standalone.R")
+   missing_analysis <- missing_data_analysis(data)
+   ```
 
 ## Key Features
 
