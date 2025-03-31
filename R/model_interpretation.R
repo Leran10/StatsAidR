@@ -628,7 +628,8 @@ generate_model_report <- function(interpretation, model_stats = NULL,
     if (is.null(model_stats)) {
       model_stats <- extract_model_stats(interpretation)
     }
-    interpretation <- interpret_model(interpretation, model_stats = model_stats)
+    # Pass model_stats directly as the model parameter, not as a named parameter
+    interpretation <- interpret_model(model_stats)
   }
   
   # Create temporary Rmd file
