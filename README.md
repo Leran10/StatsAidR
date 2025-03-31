@@ -66,15 +66,23 @@ corr_plot <- plot_correlation_matrix(data)
 create_report(data, title = "My Dataset Analysis", file = "report.html")
 ```
 
-## About RStudio Compatibility
+## About Recent Improvements
 
-StatsAidR v0.1.0 and later includes robust handling for RStudio-related issues that some users might encounter. Previous versions occasionally produced errors like `Error in rstudio$.rs.isDesktop() : attempt to apply non-function` when trying to create or display visualizations.
+### Robustness with Missing Data and RStudio Compatibility
 
-### What's Been Fixed?
+StatsAidR v0.1.0 and later includes several improvements for handling real-world data:
 
-1. **Safe RStudio Detection**: The package now uses robust methods to detect whether it's running in RStudio without causing errors.
-2. **Error-Tolerant Visualizations**: All visualization functions now have improved error handling.
-3. **Alternative Display Options**: New utility functions that work across all environments.
+1. **Robust Correlation Matrix**: The `plot_correlation_matrix()` function now:
+   - Automatically filters out columns with excessive missing values
+   - Handles correlation tests with insufficient data
+   - Provides clear indicators when correlations cannot be computed
+   - Customizable thresholds for minimum observations and missing data filtering
+
+2. **Safe RStudio Detection**: The package now uses robust methods to detect whether it's running in RStudio without causing errors.
+
+3. **Error-Tolerant Visualizations**: All visualization functions now have improved error handling.
+
+4. **Alternative Display Options**: New utility functions that work across all environments.
 
 ### Troubleshooting Visualization Issues
 
@@ -207,6 +215,8 @@ These functions provide robust alternatives that work even in environments where
 
 ## Working with Plots
 
+### Distribution Plots
+
 The `plot_distributions()` function creates a list of plots that you can explore in several ways:
 
 ```r
@@ -224,6 +234,24 @@ safe_plot(plots$categorical[[2]])  # View second categorical variable
 view_all_plots(plots)  # View all plots (with prompt between each)
 view_all_plots(plots, type = "numeric")  # View only numeric plots
 view_all_plots(plots, pause = FALSE)  # View all plots without pausing
+```
+
+### Correlation Matrix with Missing Data
+
+When working with datasets containing missing values, you can use the enhanced `plot_correlation_matrix()` function:
+
+```r
+# Default usage - will filter out variables with >30% missing values
+corr_plot <- plot_correlation_matrix(data)
+
+# Adjust filtering threshold - include variables with at least 40% complete values
+corr_plot <- plot_correlation_matrix(data, filter_missing = 0.4)
+
+# Require more complete observation pairs for correlation tests
+corr_plot <- plot_correlation_matrix(data, min_obs = 5)
+
+# Use Spearman correlation which is more robust to outliers
+corr_plot <- plot_correlation_matrix(data, method = "spearman")
 ```
 
 ## Dependencies

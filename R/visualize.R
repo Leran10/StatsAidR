@@ -314,27 +314,43 @@ print.statsaid_plots <- function(x, ...) {
 #' Create a correlation matrix heatmap
 #'
 #' This function creates a correlation matrix heatmap for numeric variables.
+#' It includes robust handling of missing values and error protection for
+#' correlation tests with insufficient data.
 #'
 #' @param data A data frame or tibble
 #' @param method Character string specifying the correlation method, default is "pearson"
 #' @param use Character string specifying how to handle missing values, default is "pairwise.complete.obs"
 #' @param sig_level Numeric value specifying the significance level for correlation testing, default is 0.05
+#' @param min_obs Minimum number of complete observation pairs required for correlation testing, default is 3
+#' @param filter_missing Proportion of non-missing values required to include a variable (0-1), default is 0.7
+#'   (meaning variables with more than 30% missing values will be excluded)
 #'
 #' @return A ggplot2 object
 #' @export
 #'
 #' @examples
 #' \dontrun{
+#' # Basic usage
 #' data <- data.frame(
 #'   a = c(1, 2, 3, 4),
 #'   b = c(2, 3, 4, 5),
 #'   c = c(0, 1, 0, 1)
 #' )
 #' plot_correlation_matrix(data)
+#' 
+#' # With missing values - adjusting filtering threshold
+#' data_with_na <- data.frame(
+#'   a = c(1, 2, 3, 4, NA, NA),
+#'   b = c(2, 3, 4, 5, 6, NA),
+#'   c = c(0, 1, 0, 1, NA, NA)
+#' )
+#' plot_correlation_matrix(data_with_na, filter_missing = 0.5)
 #' }
 plot_correlation_matrix <- function(data, method = "pearson", 
                                     use = "pairwise.complete.obs", 
-                                    sig_level = 0.05) {
+                                    sig_level = 0.05,
+                                    min_obs = 3,
+                                    filter_missing = 0.7) {
   
   # Check input
   if (!is.data.frame(data)) {
@@ -349,9 +365,9 @@ plot_correlation_matrix <- function(data, method = "pearson",
   }
   
   # Select only numeric columns
-  numeric_data <- data[, sapply(data, is.numeric), drop = FALSE]
+  numeric_cols <- which(sapply(data, is.numeric))
   
-  if (ncol(numeric_data) <= 1) {
+  if (length(numeric_cols) <= 1) {
     # Not enough numeric columns for correlation
     empty_plot <- ggplot2::ggplot() +
       ggplot2::annotate("text", x = 0.5, y = 0.5, 
@@ -360,22 +376,67 @@ plot_correlation_matrix <- function(data, method = "pearson",
     return(empty_plot)
   }
   
+  # Filter out columns with too many missing values if requested
+  if (filter_missing < 1) {
+    # Calculate proportion of non-missing values
+    valid_prop <- colMeans(!is.na(data[, numeric_cols, drop = FALSE]))
+    keep_cols <- numeric_cols[valid_prop >= filter_missing]
+    
+    if (length(keep_cols) <= 1) {
+      # Not enough columns after filtering
+      empty_plot <- ggplot2::ggplot() +
+        ggplot2::annotate("text", x = 0.5, y = 0.5, 
+                          label = paste0("Too many missing values in numeric columns.\n", 
+                                        "Try reducing the filter_missing threshold (currently ", 
+                                        filter_missing * 100, "%).")) +
+        ggplot2::theme_void()
+      return(empty_plot)
+    }
+    
+    numeric_data <- data[, keep_cols, drop = FALSE]
+    message("Filtered out ", length(numeric_cols) - length(keep_cols), 
+            " numeric columns with >", (1 - filter_missing) * 100, "% missing values")
+  } else {
+    numeric_data <- data[, numeric_cols, drop = FALSE]
+  }
+  
   # Compute correlation matrix
   corr_matrix <- cor(numeric_data, method = method, use = use)
   
-  # Compute p-values
+  # Compute p-values with error handling
   p_matrix <- matrix(NA, nrow = ncol(numeric_data), ncol = ncol(numeric_data))
+  rownames(p_matrix) <- colnames(p_matrix) <- colnames(numeric_data)
   
   for (i in 1:ncol(numeric_data)) {
     for (j in 1:ncol(numeric_data)) {
       if (i != j) {
-        test <- cor.test(numeric_data[, i], numeric_data[, j], method = method)
-        p_matrix[i, j] <- test$p.value
+        # Count complete pairs
+        complete_pairs <- sum(!is.na(numeric_data[, i]) & !is.na(numeric_data[, j]))
+        
+        if (complete_pairs < min_obs) {
+          # Not enough observations
+          p_matrix[i, j] <- NA
+        } else {
+          # Try to compute correlation test
+          test_result <- tryCatch({
+            cor.test(numeric_data[, i], numeric_data[, j], method = method)
+          }, error = function(e) {
+            # Return NULL if test fails
+            return(NULL)
+          }, warning = function(w) {
+            # Try to complete the test despite warnings
+            return(cor.test(numeric_data[, i], numeric_data[, j], method = method))
+          })
+          
+          if (!is.null(test_result)) {
+            p_matrix[i, j] <- test_result$p.value
+          } else {
+            p_matrix[i, j] <- NA
+          }
+        }
       }
     }
   }
-  
-  rownames(p_matrix) <- colnames(p_matrix) <- colnames(numeric_data)
   
   # Prepare data for plotting
   corr_df <- reshape2::melt(corr_matrix) %>%
@@ -392,7 +453,8 @@ plot_correlation_matrix <- function(data, method = "pearson",
                                  ifelse(p_value < 0.01, "**",
                                        ifelse(p_value < 0.05, "*", "")))),
       label = ifelse(variable1 == variable2, "",
-                    sprintf("%.2f%s", correlation, significance))
+                    ifelse(is.na(correlation) | is.na(p_value), "NA",
+                           sprintf("%.2f%s", correlation, significance)))
     )
   
   # Create heatmap
