@@ -104,21 +104,9 @@ analyze_missing_patterns <- function(data, plot = TRUE) {
     # Missing values bar chart
     results$plots$bar <- plot_missing_bar(data)
     
-    # Safely generate visdat plot
-    tryCatch({
-      results$plots$patterns <- visdat::vis_miss(data)
-    }, error = function(e) {
-      warning("Could not generate missing patterns visualization: ", e$message)
-      results$plots$patterns <- NULL
-    })
-    
-    # Safely generate naniar plot
-    tryCatch({
-      results$plots$combinations <- naniar::gg_miss_upset(data)
-    }, error = function(e) {
-      warning("Could not generate missing combinations visualization: ", e$message)
-      results$plots$combinations <- NULL
-    })
+    # Use our safe wrapper functions for the problematic visualizations
+    results$plots$patterns <- safe_vis_miss(data)
+    results$plots$combinations <- safe_gg_miss_upset(data)
   }
   
   # Detect potential MCAR/MAR patterns
@@ -127,6 +115,29 @@ analyze_missing_patterns <- function(data, plot = TRUE) {
   # Return results
   class(results) <- c("statsaid_missing", "list")
   return(results)
+}
+
+#' Analyze missing data patterns without visualizations
+#'
+#' This function provides a simplified version of analyze_missing_patterns that skips visualizations
+#' completely, useful for environments where visualization dependencies cause issues.
+#'
+#' @param data A data frame or tibble
+#'
+#' @return A list containing missing data analysis without plots
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' data <- data.frame(
+#'   a = c(1, 2, 3, NA),
+#'   b = c("x", "y", NA, "x")
+#' )
+#' missing_stats <- analyze_missing_data(data)
+#' }
+analyze_missing_data <- function(data) {
+  # Simply call analyze_missing_patterns with plot=FALSE
+  analyze_missing_patterns(data, plot = FALSE)
 }
 
 #' Print method for statsaid_missing objects
