@@ -110,7 +110,11 @@ If you encounter errors with `analyze_missing_patterns()`:
    ```r
    # Fully standalone implementation with no RStudio dependencies
    missing_analysis <- analyze_missing_data(data)
-   missing_analysis  # Print the results
+   missing_analysis  # Print the results with imputation recommendations
+   
+   # Access detailed imputation code for a specific column
+   column_name <- names(missing_analysis$missing_by_column[missing_analysis$missing_by_column$missing > 0, "column"])[1]
+   cat(missing_analysis$imputation_recommendations$by_column[[column_name]]$implementation$r, sep="\n")
    ```
 
 2. Alternatively, use `analyze_missing_patterns(data, plot = FALSE)` to skip visualizations
@@ -120,6 +124,11 @@ The `analyze_missing_data()` function provides the same core analysis but with:
 - No dependency on visualization packages
 - Built-in printing method that doesn't rely on external libraries
 - Direct access to missing patterns without RStudio errors
+- **Advanced imputation recommendations** including:
+  - Overall strategy based on missing data mechanism
+  - Column-specific imputation methods with rationale
+  - Implementation code examples for R and Python
+  - Recommended packages for different imputation approaches
 
 ## Key Features
 
