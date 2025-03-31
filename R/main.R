@@ -104,11 +104,21 @@ analyze_missing_patterns <- function(data, plot = TRUE) {
     # Missing values bar chart
     results$plots$bar <- plot_missing_bar(data)
     
-    # Missing patterns visualization
-    results$plots$patterns <- visdat::vis_miss(data)
+    # Safely generate visdat plot
+    tryCatch({
+      results$plots$patterns <- visdat::vis_miss(data)
+    }, error = function(e) {
+      warning("Could not generate missing patterns visualization: ", e$message)
+      results$plots$patterns <- NULL
+    })
     
-    # Missing combinations
-    results$plots$combinations <- naniar::gg_miss_upset(data)
+    # Safely generate naniar plot
+    tryCatch({
+      results$plots$combinations <- naniar::gg_miss_upset(data)
+    }, error = function(e) {
+      warning("Could not generate missing combinations visualization: ", e$message)
+      results$plots$combinations <- NULL
+    })
   }
   
   # Detect potential MCAR/MAR patterns
@@ -156,9 +166,15 @@ print.statsaid_missing <- function(x, ...) {
   }
   
   # Plots information
-  if (!is.null(x$plots)) {
+  if (!is.null(x$plots) && length(x$plots) > 0) {
     cat("Plots available in the 'plots' element of this object.\n")
     cat("Use plot() with specific plot elements for visualization.\n")
+    
+    # Indicate which plots are available
+    available_plots <- names(x$plots)[!sapply(x$plots, is.null)]
+    if (length(available_plots) > 0) {
+      cat("Available plots: ", paste(available_plots, collapse = ", "), "\n")
+    }
   }
   
   invisible(x)
@@ -647,11 +663,21 @@ create_report <- function(data, title = "Data Analysis Report",
   
   # Missing data visualizations
   cat("### Missing Data Visualizations\n\n", file = tmp_rmd, append = TRUE)
-  cat("```{r missing-viz, fig.width=10, fig.height=6}\n", file = tmp_rmd, append = TRUE)
-  cat("if (!is.null(missing_analysis$plots$heatmap)) print(missing_analysis$plots$heatmap)\n", 
+  cat("```{r missing-viz, fig.width=10, fig.height=6, error=TRUE}\n", file = tmp_rmd, append = TRUE)
+  cat("# Safely print plots if they exist\n", file = tmp_rmd, append = TRUE)
+  cat("tryCatch({\n", file = tmp_rmd, append = TRUE)
+  cat("  if (!is.null(missing_analysis$plots$heatmap)) print(missing_analysis$plots$heatmap)\n", 
       file = tmp_rmd, append = TRUE)
-  cat("if (!is.null(missing_analysis$plots$bar)) print(missing_analysis$plots$bar)\n", 
+  cat("}, error = function(e) {\n", file = tmp_rmd, append = TRUE)
+  cat("  message('Error displaying heatmap: ', e$message)\n", file = tmp_rmd, append = TRUE)
+  cat("})\n\n", file = tmp_rmd, append = TRUE)
+  
+  cat("tryCatch({\n", file = tmp_rmd, append = TRUE)
+  cat("  if (!is.null(missing_analysis$plots$bar)) print(missing_analysis$plots$bar)\n", 
       file = tmp_rmd, append = TRUE)
+  cat("}, error = function(e) {\n", file = tmp_rmd, append = TRUE)
+  cat("  message('Error displaying bar chart: ', e$message)\n", file = tmp_rmd, append = TRUE)
+  cat("})\n", file = tmp_rmd, append = TRUE)
   cat("```\n\n", file = tmp_rmd, append = TRUE)
   
   # Distribution Analysis section
