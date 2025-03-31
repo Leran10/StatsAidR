@@ -106,8 +106,20 @@ If you still encounter errors like `Error in rstudio$.rs.isDesktop()` when tryin
 
 If you encounter errors with `analyze_missing_patterns()`:
 
-1. Try using `analyze_missing_patterns(data, plot = FALSE)` to skip visualizations
-2. Make sure you have the latest version of the package which includes robust RStudio error handling
+1. Use the `analyze_missing_data()` function which is completely standalone and avoids all RStudio-related issues:
+   ```r
+   # Fully standalone implementation with no RStudio dependencies
+   missing_analysis <- analyze_missing_data(data)
+   missing_analysis  # Print the results
+   ```
+
+2. Alternatively, use `analyze_missing_patterns(data, plot = FALSE)` to skip visualizations
+
+The `analyze_missing_data()` function provides the same core analysis but with:
+- No dependency on RStudio detection
+- No dependency on visualization packages
+- Built-in printing method that doesn't rely on external libraries
+- Direct access to missing patterns without RStudio errors
 
 ## Key Features
 
