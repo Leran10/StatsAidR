@@ -58,6 +58,9 @@ design_spec <- study_design_spec(
 )
 models <- suggest_models(data, design = design_spec, outcome_var = "outcome_column")
 
+# Option 3 - Get more detailed explanations of why models are recommended
+detailed_models <- suggest_models(data, design = "case_control", detailed = TRUE)
+
 # Create visualizations
 plots <- plot_distributions(data)
 corr_plot <- plot_correlation_matrix(data)
@@ -212,6 +215,93 @@ The enhanced model suggestions will:
 5. Provide diagnostics and alternatives
 6. Guide you through model selection interactively
 
+### Design Parameters for suggest_models() Function
+
+The `suggest_models()` function accepts the following design parameters:
+
+#### Simple Design Types (as string)
+
+Pass any of these strings to the `design` parameter:
+
+```r
+suggest_models(data, design = "cross_sectional")
+```
+
+Available design types:
+- `"case_control"` - For case-control studies comparing cases with a condition to controls
+- `"cohort"` - For cohort studies following groups over time to observe outcomes
+- `"cross_sectional"` - For data collected at a single time point
+- `"longitudinal"` - For studies with multiple observations over time
+- `"rct"` - For randomized controlled trials
+- `"repeated_measures"` - For designs with multiple measurements of the same unit
+- `"hierarchical"` - For hierarchical/multilevel designs
+- `"clustered"` - For clustered data (e.g., patients within hospitals)
+- `NULL` - When no specific design is specified
+
+#### Detailed Design Specification
+
+For more control, use the `study_design_spec()` function:
+
+```r
+design_spec <- study_design_spec(
+  design_type = "longitudinal",
+  response_type = "continuous",
+  clustering = "patient_id",
+  repeated_measures = TRUE,
+  balanced = TRUE
+)
+
+suggest_models(data, design = design_spec, outcome_var = "outcome")
+```
+
+Parameters for `study_design_spec()`:
+
+| Parameter | Description | Options |
+|-----------|-------------|---------|
+| `design_type` | Basic study design | Same as simple design types above |
+| `response_type` | Type of outcome variable | "continuous", "binary", "count", "survival", "ordinal", "nominal" |
+| `clustering` | Clustering variable or structure | Variable name or cluster specification object |
+| `repeated_measures` | Has repeated measurements | TRUE/FALSE |
+| `balanced` | Is the design balanced | TRUE/FALSE |
+| `sample_size` | Approximate sample size | Numeric value |
+| `assumptions` | User-specified assumptions | Character vector |
+| `control_group` | Has a control group | TRUE/FALSE |
+| `multiple_treatments` | Has multiple treatment arms | TRUE/FALSE |
+
+Using the detailed specification provides more tailored model recommendations that account for the specific characteristics of your study design.
+
+### Enhanced Model Explanations
+
+When you need more detailed explanations about why specific models are recommended for your data, use the new `explain_model_suggestions()` function:
+
+```r
+# Get comprehensive explanations about model recommendations
+model_explanations <- explain_model_suggestions(
+  data = your_data,
+  outcome_var = "outcome_variable", 
+  design = "longitudinal"
+)
+```
+
+This enhanced function provides:
+
+1. **Detailed rationale** explaining why the model is recommended for your specific data
+2. **Key advantages** of the recommended model
+3. **Limitations** to be aware of
+4. **Best practices** for implementing the model
+5. **Common pitfalls** to avoid
+6. **Implementation code** with detailed comments
+7. **Diagnostic recommendations** with explanations
+8. **Package details** explaining what each recommended package does
+9. **References** to statistical literature for further reading
+
+Having this detailed information helps you:
+- Understand *why* a particular model is appropriate for your data
+- Learn about model assumptions and limitations
+- Implement the model correctly
+- Interpret your results with confidence
+- Avoid common mistakes in analysis
+
 ## Function Reference
 
 ### Core Analysis Functions
@@ -247,6 +337,8 @@ These functions provide robust alternatives that work even in environments where
 - `analyze_outcome()`: Analyze outcome variable characteristics
 - `study_design_spec()`: Create detailed study design specifications
 - `guide_model_selection()`: Interactive model selection guide
+- `suggest_models()`: Get intelligent model recommendations for your data
+- `explain_model_suggestions()`: Get detailed explanations of why specific models are recommended
 
 ## Working with Plots
 
